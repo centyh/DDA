@@ -17,6 +17,7 @@ public class EnemyHealth : MonoBehaviour
 
         if (currentHealth <= 0)
         {
+            StatisticManager.Instance.RegisterKill();
             Destroy(gameObject);
         }
     }

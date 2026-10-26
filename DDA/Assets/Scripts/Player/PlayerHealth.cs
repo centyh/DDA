@@ -14,11 +14,12 @@ public class PlayerHealth : MonoBehaviour
     public void TakeDamage(int damage)
     {
         currentHealth -= damage;
+        StatisticManager.Instance.RegisterDamage(damage);
         Debug.Log("Player HP: " + currentHealth);
 
         if (currentHealth <= 0)
         {
-            Debug.Log("Game Over!");
+            GameManager.Instance.EndGame();
             gameObject.SetActive(false);
         }
     }

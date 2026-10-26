@@ -14,6 +14,7 @@ public class Bullet : MonoBehaviour
     {
         if (collision.TryGetComponent<EnemyHealth>(out EnemyHealth enemy))
         {
+            StatisticManager.Instance.RegisterHit();
             enemy.TakeDamage(damage);
             Destroy(gameObject);
         }
