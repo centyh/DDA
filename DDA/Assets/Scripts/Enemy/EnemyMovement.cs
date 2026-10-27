@@ -29,4 +29,9 @@ public class EnemyMovement : MonoBehaviour
         Vector2 direction = ((Vector2)player.position - rb.position).normalized;
         rb.linearVelocity = direction * moveSpeed;
     }
+
+    public void SetMoveSpeed(float speed)
+    {
+        moveSpeed = Mathf.Max(0f, speed);
+    }
 }

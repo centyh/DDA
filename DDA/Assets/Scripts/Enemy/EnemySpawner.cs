@@ -5,8 +5,15 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private GameObject enemyPrefab;
     [SerializeField] private Transform[] spawnPoints;
     [SerializeField] private float spawnInterval = 3f;
+    [SerializeField] private float enemySpeed = 2f;
+    [SerializeField] private int enemyHealth = 3;
+
+    public float EnemySpeed => enemySpeed;
+    public int EnemyHealth => enemyHealth;
 
     private float nextSpawnTime;
+
+    public float SpawnInterval => spawnInterval;
 
     void Start()
     {
@@ -31,10 +38,31 @@ public class EnemySpawner : MonoBehaviour
 
         Transform selectedSpawnPoint = spawnPoints[randomIndex];
 
-        Instantiate(
+        GameObject enemyObject = Instantiate(
             enemyPrefab,
             selectedSpawnPoint.position,
             Quaternion.identity
         );
+
+        if (enemyObject.TryGetComponent<EnemyMovement>(out EnemyMovement movement))
+        {
+            movement.SetMoveSpeed(enemySpeed);
+        }
+
+        if (enemyObject.TryGetComponent<EnemyHealth>(out EnemyHealth health))
+        {
+            health.SetMaxHealth(enemyHealth);
+        }
+    }
+
+    public void SetEnemyStats(float speed, int health)
+    {
+        enemySpeed = Mathf.Max(0f, speed);
+        enemyHealth = Mathf.Max(1, health);
+    }
+
+    public void SetSpawnInterval(float interval)
+    {
+        spawnInterval = Mathf.Max(0.2f, interval);
     }
 }
