@@ -27,6 +27,7 @@ public class GameManager : MonoBehaviour
 
         gameOver = true;
         StatisticManager.Instance.StopTracking();
+        GetComponent<TestDataLogger>()?.SaveResults();
         Debug.Log("Game Over! Press R to restart.");
     }
 

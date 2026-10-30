@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class DifficultyManager : MonoBehaviour
 {
@@ -38,6 +39,11 @@ public class DifficultyManager : MonoBehaviour
 
     void Update()
     {
+        if (Keyboard.current != null && Keyboard.current.f1Key.wasPressedThisFrame)
+        {
+            SetDDAEnabled(!ddaEnabled);
+        }
+
         if (!ddaEnabled || !isRunning ||
             StatisticManager.Instance == null)
             return;
@@ -98,16 +104,55 @@ public class DifficultyManager : MonoBehaviour
         if (enemySpawner == null)
             return;
 
-        float spawnInterval = 4f - (difficultyLevel - 1) * 0.5f;
-        float enemySpeed = 2f + (difficultyLevel - 1) * 0.4f;
-        int enemyHealth = 3 + (difficultyLevel - 1);
+        float[] spawnIntervals = { 4f, 3f, 2.5f, 2f, 1.5f };
+        int[] enemiesPerSpawn = { 1, 1, 1, 2, 2 };
+        float[] enemySpeeds = { 2f, 2.3f, 2.6f, 2.9f, 3.2f };
+        int[] enemyHealth = { 3, 3, 4, 4, 5 };
+        int[] maxEnemies = { 10, 12, 15, 18, 20 };
 
-        enemySpawner.SetSpawnInterval(spawnInterval);
-        enemySpawner.SetEnemyStats(enemySpeed, enemyHealth);
+        int index = difficultyLevel - 1;
+
+        enemySpawner.SetSpawnSettings(
+            spawnIntervals[index],
+            enemiesPerSpawn[index],
+            maxEnemies[index]
+        );
+
+        enemySpawner.SetEnemyStats(
+            enemySpeeds[index],
+            enemyHealth[index]
+        );
     }
 
     public void StopDDA()
     {
         isRunning = false;
+    }
+
+    public void SetDDAEnabled(bool enabled)
+    {
+        ddaEnabled = enabled;
+        difficultyLevel = 1;
+        PerformanceScore = 0f;
+
+        ResetEvaluationWindow();
+        ApplyDifficulty();
+
+        Debug.Log($"DDA Enabled: {ddaEnabled}");
+    }
+
+    private void ResetEvaluationWindow()
+    {
+        StatisticManager stats = StatisticManager.Instance;
+
+        if (stats != null)
+        {
+            previousKills = stats.Kills;
+            previousShots = stats.ShotsFired;
+            previousHits = stats.ShotsHit;
+            previousDamage = stats.DamageTaken;
+        }
+
+        nextEvaluationTime = Time.time + evaluationInterval;
     }
 }

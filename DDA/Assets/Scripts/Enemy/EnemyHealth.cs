@@ -6,6 +6,8 @@ public class EnemyHealth : MonoBehaviour
 
     private int currentHealth;
 
+    private EnemySpawner spawner;
+
     void Awake()
     {
         currentHealth = maxHealth;
@@ -18,6 +20,10 @@ public class EnemyHealth : MonoBehaviour
         if (currentHealth <= 0)
         {
             StatisticManager.Instance.RegisterKill();
+
+            if (spawner != null)
+                spawner.EnemyRemoved();
+
             Destroy(gameObject);
         }
     }
@@ -26,5 +32,10 @@ public class EnemyHealth : MonoBehaviour
     {
         maxHealth = Mathf.Max(1, health);
         currentHealth = maxHealth;
+    }
+
+    public void SetSpawner(EnemySpawner enemySpawner)
+    {
+        spawner = enemySpawner;
     }
 }
