@@ -19,6 +19,8 @@ public class PlayerShooting : MonoBehaviour
 
     void Shoot()
     {
+        StatisticManager.Instance.RegisterShot();
+
         GameObject bullet = Instantiate(bulletPrefab, transform.position, transform.rotation);
 
         Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
