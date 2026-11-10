@@ -94,7 +94,14 @@ public class EnemySpawner : MonoBehaviour
 
     public void SetSpawnSettings(float interval, int count, int maximum)
     {
-        spawnInterval = Mathf.Max(0.2f, interval);
+        float newInterval = Mathf.Max(0.2f, interval);
+
+        if (!Mathf.Approximately(spawnInterval, newInterval))
+        {
+            nextSpawnTime = Time.time + newInterval;
+        }
+
+        spawnInterval = newInterval;
         enemiesPerSpawn = Mathf.Max(1, count);
         maxEnemies = Mathf.Max(1, maximum);
     }

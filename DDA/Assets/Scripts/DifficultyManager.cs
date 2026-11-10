@@ -14,6 +14,9 @@ public class DifficultyManager : MonoBehaviour
     [SerializeField, Range(1, 5)]
     private int difficultyLevel = 1;
 
+    [SerializeField, Range(1, 5)]
+    private int fixedDifficultyLevel = 3;
+
     public bool DDAEnabled => ddaEnabled;
     public int DifficultyLevel => difficultyLevel;
     public float PerformanceScore { get; private set; }
@@ -33,19 +36,23 @@ public class DifficultyManager : MonoBehaviour
 
     void Start()
     {
+        difficultyLevel = ddaEnabled ? 1 : fixedDifficultyLevel;
         ApplyDifficulty();
-        nextEvaluationTime = Time.time + evaluationInterval;
+        ResetEvaluationWindow();
     }
 
     void Update()
     {
-        if (Keyboard.current != null && Keyboard.current.f1Key.wasPressedThisFrame)
+        if (!isRunning)
+            return;
+
+        if (Keyboard.current != null &&
+            Keyboard.current.f1Key.wasPressedThisFrame)
         {
             SetDDAEnabled(!ddaEnabled);
         }
 
-        if (!ddaEnabled || !isRunning ||
-            StatisticManager.Instance == null)
+        if (!ddaEnabled || StatisticManager.Instance == null)
             return;
 
         if (Time.time >= nextEvaluationTime)
@@ -64,10 +71,15 @@ public class DifficultyManager : MonoBehaviour
         int hits = stats.ShotsHit - previousHits;
         int damage = stats.DamageTaken - previousDamage;
 
-        float accuracy = shots > 0 ? (float)hits / shots : 0f;
+        // Jakson osumatarkkuus lokia varten.
+        float windowAccuracy =
+            shots > 0 ? (float)hits / shots : 0f;
+
+        // DDA käyttää koko kierroksen osumatarkkuutta.
+        float accuracy = Mathf.Clamp01(stats.Accuracy);
 
         float killScore = Mathf.Clamp01(kills / 5f);
-        float accuracyScore = Mathf.Clamp01(accuracy);
+        float accuracyScore = accuracy;
         float damageScore = 1f - Mathf.Clamp01(damage / 5f);
 
         PerformanceScore =
@@ -75,18 +87,50 @@ public class DifficultyManager : MonoBehaviour
             accuracyScore * 0.3f +
             damageScore * 0.3f;
 
-        if (PerformanceScore >= 0.7f)
+        int oldDifficulty = difficultyLevel;
+        string changeReason = "Unchanged";
+
+        if (damage >= 2)
+        {
+            difficultyLevel--;
+            changeReason = "HighDamage";
+        }
+        else if (PerformanceScore >= 0.7f)
         {
             difficultyLevel++;
+            changeReason = "HighPerformance";
         }
         else if (PerformanceScore <= 0.3f)
         {
             difficultyLevel--;
+            changeReason = "LowPerformance";
         }
 
         difficultyLevel = Mathf.Clamp(difficultyLevel, 1, 5);
 
+        if (difficultyLevel == oldDifficulty)
+        {
+            changeReason = "Unchanged";
+        }
+
         ApplyDifficulty();
+
+        TestDataLogger logger =
+            FindFirstObjectByType<TestDataLogger>();
+
+        if (logger != null)
+        {
+            logger.LogDifficultyEvaluation(
+                oldDifficulty,
+                difficultyLevel,
+                PerformanceScore,
+                kills,
+                shots,
+                windowAccuracy,
+                damage,
+                changeReason
+            );
+        }
 
         previousKills = stats.Kills;
         previousShots = stats.ShotsFired;
@@ -95,7 +139,8 @@ public class DifficultyManager : MonoBehaviour
 
         Debug.Log(
             $"DDA | Score: {PerformanceScore:F2} | " +
-            $"Difficulty: {difficultyLevel}"
+            $"Difficulty: {oldDifficulty} -> {difficultyLevel} | " +
+            $"Reason: {changeReason}"
         );
     }
 
@@ -131,14 +176,34 @@ public class DifficultyManager : MonoBehaviour
 
     public void SetDDAEnabled(bool enabled)
     {
+        if (!isRunning || ddaEnabled == enabled)
+            return;
+
+        int oldDifficulty = difficultyLevel;
+
         ddaEnabled = enabled;
-        difficultyLevel = 1;
+        difficultyLevel = ddaEnabled ? 1 : fixedDifficultyLevel;
         PerformanceScore = 0f;
 
         ResetEvaluationWindow();
         ApplyDifficulty();
 
-        Debug.Log($"DDA Enabled: {ddaEnabled}");
+        TestDataLogger logger =
+            FindFirstObjectByType<TestDataLogger>();
+
+        if (logger != null)
+        {
+            logger.LogDDAEvent(
+                ddaEnabled ? "DDAEnabled" : "DDADisabled",
+                oldDifficulty,
+                difficultyLevel
+            );
+        }
+
+        Debug.Log(
+            $"DDA Enabled: {ddaEnabled} | " +
+            $"Difficulty: {difficultyLevel}"
+        );
     }
 
     private void ResetEvaluationWindow()

@@ -10,8 +10,7 @@ public class StatisticManager : MonoBehaviour
     public int DamageTaken { get; private set; }
     public float SurvivalTime { get; private set; }
 
-    public float Accuracy =>
-        ShotsFired > 0 ? (float)ShotsHit / ShotsFired : 0f;
+    public float Accuracy => ShotsFired > 0 ? (float)ShotsHit / ShotsFired : 0f;
 
     private bool isRunning = true;
 

@@ -6,7 +6,13 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
+    [Header("Test Settings")]
+    [SerializeField] private float timeLimit = 180f;
+
     private bool gameOver;
+    private bool timeLimitReached;
+
+    public bool TimeLimitReached => timeLimitReached;
 
     void Awake()
     {
@@ -15,7 +21,17 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        if (gameOver && Keyboard.current.rKey.wasPressedThisFrame)
+        if (!gameOver &&
+            StatisticManager.Instance != null &&
+            StatisticManager.Instance.SurvivalTime >= timeLimit)
+        {
+            timeLimitReached = true;
+            EndGame();
+        }
+
+        if (gameOver &&
+            Keyboard.current != null &&
+            Keyboard.current.rKey.wasPressedThisFrame)
         {
             RestartGame();
         }
@@ -23,16 +39,47 @@ public class GameManager : MonoBehaviour
 
     public void EndGame()
     {
-        if (gameOver) return;
+        if (gameOver)
+            return;
 
         gameOver = true;
-        StatisticManager.Instance.StopTracking();
-        GetComponent<TestDataLogger>()?.SaveResults();
-        Debug.Log("Game Over! Press R to restart.");
+
+        if (DifficultyManager.Instance != null)
+        {
+            DifficultyManager.Instance.StopDDA();
+        }
+
+        if (StatisticManager.Instance != null)
+        {
+            StatisticManager.Instance.StopTracking();
+        }
+
+        TestDataLogger logger =
+            FindFirstObjectByType<TestDataLogger>();
+
+        if (logger != null)
+        {
+            logger.SaveResults();
+        }
+
+        if (timeLimitReached)
+        {
+            Debug.Log("Time limit reached! Press R to restart.");
+
+        }
+        else
+        {
+            Debug.Log("Game Over! Press R to restart.");
+            
+        }
+
+        Time.timeScale = 0f;
     }
 
     void RestartGame()
     {
+        Time.timeScale = 1f;
+
         SceneManager.LoadScene(
             SceneManager.GetActiveScene().buildIndex
         );
